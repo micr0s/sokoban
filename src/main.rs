@@ -1,11 +1,13 @@
 use ggez;
+use ggez::event::{KeyCode, KeyMods};
 use ggez::graphics;
 use ggez::graphics::DrawParam;
 use ggez::graphics::Image;
 use ggez::nalgebra as na;
 use ggez::{conf, event, Context, GameResult};
 use specs::{
-    join::Join, Builder, Component, ReadStorage, RunNow, System, VecStorage, World, WorldExt,
+    join::Join, Builder, Component, Read, ReadStorage, RunNow, System, VecStorage, World, WorldExt,
+    Write, WriteStorage,
 };
 
 use std::path;
@@ -44,7 +46,14 @@ pub struct Box {}
 #[storage(VecStorage)]
 pub struct BoxSpot {}
 
-//todo move to
+//todo move to event_handling
+// Resources
+#[derive(Default)]
+pub struct InputQueue {
+    pub keys_pressed: Vec<KeyCode>,
+}
+
+//todo move to Rendering
 // Systems
 pub struct RenderingSystem<'a> {
     context: &'a mut Context,
@@ -85,6 +94,36 @@ impl<'a> System<'a> for RenderingSystem<'a> {
     }
 }
 
+//todo: move to system
+pub struct InputSystem {}
+
+impl<'a> System<'a> for InputSystem {
+    // Data
+    type SystemData = (
+        Write<'a, InputQueue>,
+        WriteStorage<'a, Position>,
+        ReadStorage<'a, Player>,
+    );
+
+    fn run(&mut self, data: Self::SystemData) {
+        let (mut input_queue, mut positions, players) = data;
+
+        for (position, _player) in (&mut positions, &players).join() {
+            // Get the first key pressed
+            if let Some(key) = input_queue.keys_pressed.pop() {
+                // Apply the key to the position
+                match key {
+                    KeyCode::Up => position.y -= 1,
+                    KeyCode::Down => position.y += 1,
+                    KeyCode::Left => position.x -= 1,
+                    KeyCode::Right => position.x += 1,
+                    _ => (),
+                }
+            }
+        }
+    }
+}
+
 // This struct will hold all our game state
 // For now there is nothing to be held, but we'll add
 // things shortly.
@@ -98,7 +137,25 @@ struct Game {
 // - rendering
 impl event::EventHandler for Game {
     fn update(&mut self, _context: &mut Context) -> GameResult {
+        // Run input system
+        {
+            let mut is = InputSystem {};
+            is.run_now(&self.world);
+        }
         Ok(())
+    }
+
+    fn key_down_event(
+        &mut self,
+        _context: &mut Context,
+        keycode: KeyCode,
+        _keymod: KeyMods,
+        _repeat: bool,
+    ) {
+        println!("Key pressed: {:?}", keycode);
+
+        let mut input_queue = self.world.write_resource::<InputQueue>();
+        input_queue.keys_pressed.push(keycode);
     }
 
     fn draw(&mut self, context: &mut Context) -> GameResult {
@@ -110,6 +167,11 @@ impl event::EventHandler for Game {
 
         Ok(())
     }
+}
+
+// Registering resources
+pub fn register_resources(world: &mut World) {
+    world.insert(InputQueue::default())
 }
 
 //todo move to Components
@@ -235,6 +297,7 @@ pub fn load_map(world: &mut World, map_string: String) {
 pub fn main() -> GameResult {
     let mut world = World::new();
     register_components(&mut world);
+    register_resources(&mut world);
     initialize_level(&mut world);
 
     // Create a game context and event loop
