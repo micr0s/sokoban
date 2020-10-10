@@ -4,6 +4,7 @@ use ggez;
 use ggez::{conf, Context, event, GameResult};
 use ggez::event::{KeyCode, KeyMods};
 use specs::{RunNow, World, WorldExt};
+use crate::constants::{MAP_HEIGHT, TILE_SIZE, MAP_WIDTH};
 
 mod resources;
 mod map;
@@ -82,7 +83,8 @@ pub fn main() -> GameResult {
     // Create a game context and event loop
     let context_builder = ggez::ContextBuilder::new("rust_sokoban", "sokoban")
         .window_setup(conf::WindowSetup::default().title("Rust Sokoban!"))
-        .window_mode(conf::WindowMode::default().dimensions(800.0, 600.0))
+        .window_mode(conf::WindowMode::default()
+            .dimensions(MAP_HEIGHT as f32 * TILE_SIZE, MAP_WIDTH as f32 * TILE_SIZE))
         .add_resource_path(path::PathBuf::from("./resources"));
 
     let (context, event_loop) = &mut context_builder.build()?;
