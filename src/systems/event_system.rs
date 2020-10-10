@@ -22,7 +22,12 @@ impl<'a> System<'a> for EventSystem {
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut event_queue, mut audio_store, entities, boxes, box_spots, positions) = data;
+        let (mut event_queue,
+            mut audio_store,
+            entities,
+            boxes,
+            box_spots,
+            positions) = data;
 
         let mut new_events = Vec::new();
 

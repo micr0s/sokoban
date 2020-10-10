@@ -37,7 +37,8 @@ pub struct EventQueue {
 #[derive(Default)]
 pub struct Gameplay {
     pub state: GameplayState,
-    pub moves_count: u32
+    pub moves_count: u32,
+    pub level: u8,
 }
 
 #[derive(Default)]

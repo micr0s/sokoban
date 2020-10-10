@@ -1,11 +1,12 @@
+use std::cmp::Ordering;
 use std::path;
 
 use ggez;
 use ggez::{conf, Context, event, GameResult, timer};
 use ggez::event::{KeyCode, KeyMods};
 use specs::{RunNow, World, WorldExt};
-use crate::constants::{MAP_HEIGHT, TILE_SIZE, MAP_WIDTH, STATE_DLMR_WIDTH, STATE_WIDTH, STATE_HEIGHT, STATE_DLMR_HEIGHT};
-use std::cmp::Ordering;
+
+use crate::constants::{FIRST_LEVEL, MAP_HEIGHT, MAP_WIDTH, STATE_DLMR_HEIGHT, STATE_DLMR_WIDTH, STATE_HEIGHT, STATE_WIDTH, TILE_SIZE};
 use crate::resources::Time;
 
 mod resources;
@@ -16,6 +17,7 @@ mod components;
 mod systems;
 mod events;
 mod audio;
+mod levels;
 
 // This struct will hold all our game state
 // For now there is nothing to be held, but we'll add
@@ -78,40 +80,27 @@ impl event::EventHandler for Game {
     }
 }
 
-//todo: load from file
-// Initialize the level
-pub fn initialize_level(world: &mut World) {
-    const MAP: &str = "
-    N N W W W W W W
-    W W W . . . . W
-    W . . . BB . . W
-    W . . RB . . . W
-    W . P . . . . W
-    W . . . . RS . W
-    W . . BS . . . W
-    W . . . . . . W
-    W W W W W W W W
-    ";
-
-    map::load_map(world, MAP.to_string());
-}
-
-pub fn main() -> GameResult {
-    let mut world = World::new();
-    components::register_components(&mut world);
-    resources::register_resources(&mut world);
-    initialize_level(&mut world);
-
-    // Create a game context and event loop
+pub fn calculate_dimensions() -> (f32, f32) {
     let state_height_tiles = STATE_HEIGHT + STATE_DLMR_HEIGHT;
     let width = (MAP_WIDTH + STATE_DLMR_WIDTH + STATE_WIDTH) as f32 * TILE_SIZE;
     let height = match MAP_HEIGHT.cmp(&state_height_tiles) {
         Ordering::Less => state_height_tiles,
         _ => MAP_HEIGHT
     } as f32 * TILE_SIZE;
+    (width, height)
+}
+
+pub fn main() -> GameResult {
+    let mut world = World::new();
+    components::register_components(&mut world);
+    resources::register_resources(&mut world);
+    map::load_map(&mut world, levels::load_level(FIRST_LEVEL));
+
+    // Create a game context and event loop
+    let dimensions = calculate_dimensions();
     let context_builder = ggez::ContextBuilder::new("rust_sokoban", "sokoban")
         .window_setup(conf::WindowSetup::default().title("Rust Sokoban!"))
-        .window_mode(conf::WindowMode::default().dimensions(width, height))
+        .window_mode(conf::WindowMode::default().dimensions(dimensions.0, dimensions.1))
         .add_resource_path(path::PathBuf::from("./resources"));
 
     let (context, event_loop) = &mut context_builder.build()?;
