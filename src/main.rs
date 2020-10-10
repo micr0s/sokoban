@@ -14,6 +14,8 @@ mod entities;
 mod constants;
 mod components;
 mod systems;
+mod events;
+mod audio;
 
 // This struct will hold all our game state
 // For now there is nothing to be held, but we'll add
@@ -44,6 +46,12 @@ impl event::EventHandler for Game {
         {
             let mut time = self.world.write_resource::<Time>();
             time.delta += timer::delta(context);
+        }
+
+        // Run event system
+        {
+            let mut gss = systems::EventSystem {};
+            gss.run_now(&self.world);
         }
         Ok(())
     }
@@ -107,6 +115,7 @@ pub fn main() -> GameResult {
         .add_resource_path(path::PathBuf::from("./resources"));
 
     let (context, event_loop) = &mut context_builder.build()?;
+    audio::initialize_sounds(&mut world, context);
 
     // Create the game state
     let game = &mut Game { world };

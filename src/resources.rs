@@ -1,9 +1,11 @@
+use std::{fmt::Display, time::Duration};
 use std::fmt;
-use std::fmt::Display;
 
 use ggez::event::KeyCode;
 use specs::World;
-use std::time::Duration;
+
+use crate::audio::AudioStore;
+use crate::events::Event;
 
 #[derive(PartialEq)]
 pub enum GameplayState {
@@ -28,6 +30,11 @@ impl Display for GameplayState {
 }
 
 #[derive(Default)]
+pub struct EventQueue {
+    pub events: Vec<Event>,
+}
+
+#[derive(Default)]
 pub struct Gameplay {
     pub state: GameplayState,
     pub moves_count: u32
@@ -48,4 +55,6 @@ pub fn register_resources(world: &mut World) {
     world.insert(InputQueue::default());
     world.insert(Gameplay::default());
     world.insert(Time::default());
+    world.insert(EventQueue::default());
+    world.insert(AudioStore::default());
 }
