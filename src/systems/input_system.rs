@@ -87,7 +87,8 @@ impl<'a> System<'a> for InputSystem {
                             match immov.get(&pos) {
                                 Some(_id) => {
                                     to_move.clear();
-                                    events.events.push(Event::PlayerHitObstacle {})
+                                    events.events.push(Event::PlayerHitObstacle {});
+                                    break;
                                 }
                                 None => break,
                             }
@@ -100,6 +101,7 @@ impl<'a> System<'a> for InputSystem {
         // We've just moved, so let's increase the number of moves
         if to_move.len() > 0 {
             gameplay.moves_count += 1;
+            println!("To move: {}", to_move.len());
         }
 
         // Now actually move what needs to be moved
