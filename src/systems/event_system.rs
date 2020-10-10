@@ -6,6 +6,8 @@ use crate::{
 };
 use specs::{Entities, Join, ReadStorage, System, Write};
 use std::collections::HashMap;
+use crate::events::LevelStart;
+use crate::levels::LevelStore;
 
 pub struct EventSystem {}
 
@@ -15,6 +17,7 @@ impl<'a> System<'a> for EventSystem {
     type SystemData = (
         Write<'a, EventQueue>,
         Write<'a, AudioStore>,
+        Write<'a, LevelStore>,
         Entities<'a>,
         ReadStorage<'a, Box>,
         ReadStorage<'a, BoxSpot>,
@@ -22,7 +25,13 @@ impl<'a> System<'a> for EventSystem {
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut event_queue, mut audio_store, entities, boxes, box_spots, positions) = data;
+        let (mut event_queue,
+            mut audio_store,
+            mut level_store,
+            entities,
+            boxes,
+            box_spots,
+            positions) = data;
 
         let mut new_events = Vec::new();
 
@@ -30,6 +39,10 @@ impl<'a> System<'a> for EventSystem {
             println!("New event: {:?}", event);
 
             match event {
+                Event::LevelStart(LevelStart {level}) => {
+                    // load level here
+                    level_store.load_level(level);
+                }
                 Event::PlayerHitObstacle => {
                     // play sound here
                     audio_store.play_sound(&"wall".to_string());

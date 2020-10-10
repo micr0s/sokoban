@@ -1,6 +1,11 @@
 pub type EntityId = u32;
 
 #[derive(Debug)]
+pub struct LevelStart {
+    pub level: u8,
+}
+
+#[derive(Debug)]
 pub struct EntityMoved {
     pub id: EntityId,
 }
@@ -12,6 +17,9 @@ pub struct BoxPlacedOnSpot {
 
 #[derive(Debug)]
 pub enum Event {
+    // Fired when game is started
+    LevelStart(LevelStart),
+
     // Fired when the player hits an obstacle like a wall
     PlayerHitObstacle,
 
