@@ -1,11 +1,12 @@
 use std::path;
 
 use ggez;
-use ggez::{conf, Context, event, GameResult};
+use ggez::{conf, Context, event, GameResult, timer};
 use ggez::event::{KeyCode, KeyMods};
 use specs::{RunNow, World, WorldExt};
 use crate::constants::{MAP_HEIGHT, TILE_SIZE, MAP_WIDTH, STATE_DLMR_WIDTH, STATE_WIDTH, STATE_HEIGHT, STATE_DLMR_HEIGHT};
 use std::cmp::Ordering;
+use crate::resources::Time;
 
 mod resources;
 mod map;
@@ -26,7 +27,7 @@ struct Game {
 // - updating
 // - rendering
 impl event::EventHandler for Game {
-    fn update(&mut self, _context: &mut Context) -> GameResult {
+    fn update(&mut self, context: &mut Context) -> GameResult {
         // Run input system
         {
             let mut is = systems::InputSystem {};
@@ -37,6 +38,12 @@ impl event::EventHandler for Game {
         {
             let mut gss = systems::GameplayStateSystem {};
             gss.run_now(&self.world);
+        }
+
+        // Get and update time resource
+        {
+            let mut time = self.world.write_resource::<Time>();
+            time.delta += timer::delta(context);
         }
         Ok(())
     }
