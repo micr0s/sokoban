@@ -1,128 +1,16 @@
-use ggez;
-use ggez::event::{KeyCode, KeyMods};
-use ggez::graphics;
-use ggez::graphics::DrawParam;
-use ggez::graphics::Image;
-use ggez::nalgebra as na;
-use ggez::{conf, event, Context, GameResult};
-use specs::{
-    join::Join, Builder, Component, Read, ReadStorage, RunNow, System, VecStorage, World, WorldExt,
-    Write, WriteStorage,
-};
-
 use std::path;
 
-const TILE_WIDTH: f32 = 32.0;
+use ggez;
+use ggez::{conf, Context, event, GameResult};
+use ggez::event::{KeyCode, KeyMods};
+use specs::{RunNow, World, WorldExt};
 
-//todo move to
-// Components
-#[derive(Debug, Component, Clone, Copy)]
-#[storage(VecStorage)]
-pub struct Position {
-    x: u8,
-    y: u8,
-    z: u8,
-}
-
-#[derive(Component)]
-#[storage(VecStorage)]
-pub struct Renderable {
-    path: String,
-}
-
-#[derive(Component)]
-#[storage(VecStorage)]
-pub struct Wall {}
-
-#[derive(Component)]
-#[storage(VecStorage)]
-pub struct Player {}
-
-#[derive(Component)]
-#[storage(VecStorage)]
-pub struct Box {}
-
-#[derive(Component)]
-#[storage(VecStorage)]
-pub struct BoxSpot {}
-
-//todo move to event_handling
-// Resources
-#[derive(Default)]
-pub struct InputQueue {
-    pub keys_pressed: Vec<KeyCode>,
-}
-
-//todo move to Rendering
-// Systems
-pub struct RenderingSystem<'a> {
-    context: &'a mut Context,
-}
-
-// System implementation
-impl<'a> System<'a> for RenderingSystem<'a> {
-    // Data
-    type SystemData = (ReadStorage<'a, Position>, ReadStorage<'a, Renderable>);
-
-    fn run(&mut self, data: Self::SystemData) {
-        let (positions, renderables) = data;
-
-        // Clearing the screen (this gives us the backround colour)
-        graphics::clear(self.context, graphics::Color::new(0.95, 0.95, 0.95, 1.0));
-
-        // Get all the renderables with their positions and sort by the position z
-        // This will allow us to have entities layered visually.
-        let mut rendering_data = (&positions, &renderables).join().collect::<Vec<_>>();
-        rendering_data.sort_by_key(|&k| k.0.z);
-
-        // Iterate through all pairs of positions & renderables, load the image
-        // and draw it at the specified position.
-        for (position, renderable) in rendering_data.iter() {
-            // Load the image
-            let image = Image::new(self.context, renderable.path.clone()).expect("expected image");
-            let x = position.x as f32 * TILE_WIDTH;
-            let y = position.y as f32 * TILE_WIDTH;
-
-            // draw
-            let draw_params = DrawParam::new().dest(na::Point2::new(x, y));
-            graphics::draw(self.context, &image, draw_params).expect("expected render");
-        }
-
-        // Finally, present the context, this will actually display everything
-        // on the screen.
-        graphics::present(self.context).expect("expected to present");
-    }
-}
-
-//todo: move to system
-pub struct InputSystem {}
-
-impl<'a> System<'a> for InputSystem {
-    // Data
-    type SystemData = (
-        Write<'a, InputQueue>,
-        WriteStorage<'a, Position>,
-        ReadStorage<'a, Player>,
-    );
-
-    fn run(&mut self, data: Self::SystemData) {
-        let (mut input_queue, mut positions, players) = data;
-
-        for (position, _player) in (&mut positions, &players).join() {
-            // Get the first key pressed
-            if let Some(key) = input_queue.keys_pressed.pop() {
-                // Apply the key to the position
-                match key {
-                    KeyCode::Up => position.y -= 1,
-                    KeyCode::Down => position.y += 1,
-                    KeyCode::Left => position.x -= 1,
-                    KeyCode::Right => position.x += 1,
-                    _ => (),
-                }
-            }
-        }
-    }
-}
+mod resources;
+mod map;
+mod entities;
+mod constants;
+mod components;
+mod systems;
 
 // This struct will hold all our game state
 // For now there is nothing to be held, but we'll add
@@ -139,7 +27,7 @@ impl event::EventHandler for Game {
     fn update(&mut self, _context: &mut Context) -> GameResult {
         // Run input system
         {
-            let mut is = InputSystem {};
+            let mut is = systems::InputSystem {};
             is.run_now(&self.world);
         }
         Ok(())
@@ -152,92 +40,19 @@ impl event::EventHandler for Game {
         _keymod: KeyMods,
         _repeat: bool,
     ) {
-        println!("Key pressed: {:?}", keycode);
-
-        let mut input_queue = self.world.write_resource::<InputQueue>();
+        let mut input_queue = self.world.write_resource::<resources::InputQueue>();
         input_queue.keys_pressed.push(keycode);
     }
 
     fn draw(&mut self, context: &mut Context) -> GameResult {
         // Render game entities
         {
-            let mut rs = RenderingSystem { context };
+            let mut rs = systems::RenderingSystem { context };
             rs.run_now(&self.world);
         }
 
         Ok(())
     }
-}
-
-// Registering resources
-pub fn register_resources(world: &mut World) {
-    world.insert(InputQueue::default())
-}
-
-//todo move to Components
-// Register components with the world
-pub fn register_components(world: &mut World) {
-    world.register::<Position>();
-    world.register::<Renderable>();
-    world.register::<Player>();
-    world.register::<Wall>();
-    world.register::<Box>();
-    world.register::<BoxSpot>();
-}
-
-// Create a wall entity
-pub fn create_wall(world: &mut World, position: Position) {
-    world
-        .create_entity()
-        .with(Position { z: 10, ..position })
-        .with(Renderable {
-            path: "/images/wall.png".to_string(),
-        })
-        .with(Wall {})
-        .build();
-}
-
-pub fn create_floor(world: &mut World, position: Position) {
-    world
-        .create_entity()
-        .with(Position { z: 5, ..position })
-        .with(Renderable {
-            path: "/images/floor.png".to_string(),
-        })
-        .build();
-}
-
-pub fn create_box(world: &mut World, position: Position) {
-    world
-        .create_entity()
-        .with(Position { z: 10, ..position })
-        .with(Renderable {
-            path: "/images/box.png".to_string(),
-        })
-        .with(Box {})
-        .build();
-}
-
-pub fn create_box_spot(world: &mut World, position: Position) {
-    world
-        .create_entity()
-        .with(Position { z: 9, ..position })
-        .with(Renderable {
-            path: "/images/box_spot.png".to_string(),
-        })
-        .with(BoxSpot {})
-        .build();
-}
-
-pub fn create_player(world: &mut World, position: Position) {
-    world
-        .create_entity()
-        .with(Position { z: 10, ..position })
-        .with(Renderable {
-            path: "/images/player.png".to_string(),
-        })
-        .with(Player {})
-        .build();
 }
 
 //todo: load from file
@@ -255,49 +70,13 @@ pub fn initialize_level(world: &mut World) {
     W W W W W W W W
     ";
 
-    load_map(world, MAP.to_string());
-}
-
-pub fn load_map(world: &mut World, map_string: String) {
-    let rows: Vec<&str> = map_string.trim().split('\n').map(|x| x.trim()).collect();
-    for (x, row) in rows.iter().enumerate() {
-
-        let cols: Vec<&str> = row.split(' ').collect();
-        for (y, col) in cols.iter().enumerate() {
-            let pos = Position {
-                x: x as u8,
-                y: y as u8,
-                z: 0
-            };
-            match *col {
-                "." => create_floor(world, pos),
-                "W" => {
-                    create_floor(world, pos);
-                    create_wall(world, pos);
-                },
-                "P" => {
-                    create_floor(world, pos);
-                    create_player(world, pos);
-                },
-                "B" => {
-                    create_floor(world, pos);
-                    create_box(world, pos);
-                },
-                "S" => {
-                    create_floor(world, pos);
-                    create_box_spot(world, pos);
-                },
-                "N" => (),
-                c => panic!("unrecognized map item {}", c),
-            }
-        }
-    }
+    map::load_map(world, MAP.to_string());
 }
 
 pub fn main() -> GameResult {
     let mut world = World::new();
-    register_components(&mut world);
-    register_resources(&mut world);
+    components::register_components(&mut world);
+    resources::register_resources(&mut world);
     initialize_level(&mut world);
 
     // Create a game context and event loop
