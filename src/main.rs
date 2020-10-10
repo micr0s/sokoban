@@ -4,7 +4,8 @@ use ggez;
 use ggez::{conf, Context, event, GameResult};
 use ggez::event::{KeyCode, KeyMods};
 use specs::{RunNow, World, WorldExt};
-use crate::constants::{MAP_HEIGHT, TILE_SIZE, MAP_WIDTH};
+use crate::constants::{MAP_HEIGHT, TILE_SIZE, MAP_WIDTH, STATE_DLMR_WIDTH, STATE_WIDTH, STATE_HEIGHT, STATE_DLMR_HEIGHT};
+use std::cmp::Ordering;
 
 mod resources;
 mod map;
@@ -87,10 +88,15 @@ pub fn main() -> GameResult {
     initialize_level(&mut world);
 
     // Create a game context and event loop
+    let state_height_tiles = STATE_HEIGHT + STATE_DLMR_HEIGHT;
+    let width = (MAP_WIDTH + STATE_DLMR_WIDTH + STATE_WIDTH) as f32 * TILE_SIZE;
+    let height = match MAP_HEIGHT.cmp(&state_height_tiles) {
+        Ordering::Less => state_height_tiles,
+        _ => MAP_HEIGHT
+    } as f32 * TILE_SIZE;
     let context_builder = ggez::ContextBuilder::new("rust_sokoban", "sokoban")
         .window_setup(conf::WindowSetup::default().title("Rust Sokoban!"))
-        .window_mode(conf::WindowMode::default()
-            .dimensions(MAP_HEIGHT as f32 * TILE_SIZE, MAP_WIDTH as f32 * TILE_SIZE))
+        .window_mode(conf::WindowMode::default().dimensions(width, height))
         .add_resource_path(path::PathBuf::from("./resources"));
 
     let (context, event_loop) = &mut context_builder.build()?;

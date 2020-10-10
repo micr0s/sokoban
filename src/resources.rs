@@ -1,3 +1,6 @@
+use std::fmt;
+use std::fmt::Display;
+
 use ggez::event::KeyCode;
 use specs::World;
 
@@ -10,6 +13,16 @@ pub enum GameplayState {
 impl Default for GameplayState {
     fn default() -> Self {
         Self::Playing
+    }
+}
+
+impl Display for GameplayState {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_str(match self {
+            GameplayState::Playing => "Playing",
+            GameplayState::Won => "Won"
+        })?;
+        Ok(())
     }
 }
 
