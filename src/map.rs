@@ -5,10 +5,10 @@ use crate::entities::*;
 
 pub fn load_map(world: &mut World, map_string: String) {
     let rows: Vec<&str> = map_string.trim().split('\n').map(|x| x.trim()).collect();
-    for (x, row) in rows.iter().enumerate() {
+    for (y, row) in rows.iter().enumerate() {
 
         let cols: Vec<&str> = row.split(' ').collect();
-        for (y, col) in cols.iter().enumerate() {
+        for (x, col) in cols.iter().enumerate() {
             let pos = Position {
                 x: x as u8,
                 y: y as u8,
