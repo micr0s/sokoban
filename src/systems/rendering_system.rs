@@ -4,7 +4,7 @@ use ggez::nalgebra as na;
 use specs::{Join, ReadStorage, System};
 
 use crate::components::{Position, Renderable};
-use crate::constants::TILE_WIDTH;
+use crate::constants::TILE_SIZE;
 
 pub struct RenderingSystem<'a> {
     pub context: &'a mut Context,
@@ -31,8 +31,8 @@ impl<'a> System<'a> for RenderingSystem<'a> {
         for (position, renderable) in rendering_data.iter() {
             // Load the image
             let image = Image::new(self.context, renderable.path.clone()).expect("expected image");
-            let x = position.x as f32 * TILE_WIDTH;
-            let y = position.y as f32 * TILE_WIDTH;
+            let x = position.x as f32 * TILE_SIZE;
+            let y = position.y as f32 * TILE_SIZE;
 
             // draw
             let draw_params = DrawParam::new().dest(na::Point2::new(x, y));
