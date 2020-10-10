@@ -1,4 +1,4 @@
-use ggez::{Context, graphics};
+use ggez::{Context, graphics, timer};
 use ggez::graphics::{DrawParam, Image, Color};
 use ggez::nalgebra as na;
 use specs::{Join, ReadStorage, System, Read};
@@ -34,7 +34,7 @@ impl RenderingSystem<'_> {
             .expect("expected drawing queued text");
     }
 
-    pub fn get_image(&mut self, renderable: &Renderable, delta: Duration) -> Image {
+    pub fn get_image(&mut self, renderable: &Renderable, delta: Duration) -> String {
         let path_index = match renderable.kind() {
             RenderableKind::Static => {
                 0
@@ -86,6 +86,7 @@ impl<'a> System<'a> for RenderingSystem<'a> {
         // Render any text
         self.draw_text(&format!("State: {}", gameplay.state), 0);
         self.draw_text(&format!("Moves: {}", gameplay.moves_count), 1);
+        self.draw_text(&format!("FPS: {:.0}", timer::fps(self.context)), 2);
 
         // Finally, present the context, this will actually display everything
         // on the screen.
