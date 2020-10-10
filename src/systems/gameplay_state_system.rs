@@ -3,13 +3,15 @@ use std::collections::HashMap;
 use specs::{Join, ReadStorage, System, Write};
 
 use crate::components::{Box, BoxSpot, Position};
-use crate::resources::{Gameplay, GameplayState};
+use crate::resources::{Gameplay, GameplayState, EventQueue};
+use crate::events::Event;
 
 pub struct GameplayStateSystem {}
 
 impl<'a> System<'a> for GameplayStateSystem {
     // Data
     type SystemData = (
+        Write<'a, EventQueue>,
         Write<'a, Gameplay>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, Box>,
@@ -17,7 +19,8 @@ impl<'a> System<'a> for GameplayStateSystem {
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut gameplay_state,
+        let (mut events,
+            mut gameplay_state,
             positions,
             boxes,
             box_spots) = data;
@@ -44,6 +47,7 @@ impl<'a> System<'a> for GameplayStateSystem {
         // game has been won
         if gameplay_state.state != GameplayState::Won {
             gameplay_state.state = GameplayState::Won;
+            events.events.push(Event::PlayerWon {});
             println!("You won in {} moves", gameplay_state.moves_count)
         }
     }

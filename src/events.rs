@@ -15,6 +15,9 @@ pub enum Event {
     // Fired when the player hits an obstacle like a wall
     PlayerHitObstacle,
 
+    // Fired when all boxes placed on correct colour spots
+    PlayerWon,
+
     // Fired when an entity is moved
     EntityMoved(EntityMoved),
 

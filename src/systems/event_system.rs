@@ -67,6 +67,10 @@ impl<'a> System<'a> for EventSystem {
 
                     audio_store.play_sound(&sound.to_string())
                 }
+                Event::PlayerWon => {
+                    let sound = "won";
+                    audio_store.play_sound(&sound.to_string())
+                }
             }
         }
 
