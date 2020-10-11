@@ -88,10 +88,10 @@ impl<'a> System<'a> for InputSystem {
                                 Some(_id) => {
                                     to_move.clear();
                                     events.events.push(Event::PlayerHitObstacle {});
-                                    break;
                                 }
-                                None => break,
+                                None => (),
                             }
+                            break;
                         }
                     }
                 }
